@@ -1,4 +1,4 @@
-FROM microsoft/vsts-agent:windows-10.0.14393
+FROM enablon/vsts-agent:windows-10.0.14393
 
 ENV chocolateyUseWindowsCompression=false
 RUN @powershell -NoProfile -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
@@ -35,6 +35,15 @@ RUN choco install \
     --timeout 216000 \
     -pre \
     && rmdir /S /Q C:\chococache
+
+##install NDP462-DevPack-KB3151934-ENU prior to installing the workloads because the nuget package installation hangs indefinitely
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+RUN Invoke-WebRequest "https://download.microsoft.com/download/E/F/D/EFD52638-B804-4865-BB57-47F4B9C80269/NDP462-DevPack-KB3151934-ENU.exe" -OutFile "$env:TEMP\NDP462-DevPack-KB3151934-ENU.exe" -UseBasicParsing 
+
+RUN &  "$env:TEMP\NDP462-DevPack-KB3151934-ENU.exe" /quiet /norestart /Log "$env:TEMP\NDP462-DevPack-KB3151934-ENU.log"
+
+SHELL ["cmd", "/S", "/C"]
 
 RUN choco install \
     visualstudio2017-workload-azure \
